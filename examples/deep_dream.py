@@ -12,6 +12,13 @@ python deep_dream.py img/mypic.jpg results/dream
 '''
 from __future__ import print_function
 
+'''
+add 
+import plaidml.keras
+plaidml.keras.install_backend()
+
+if not defined already in ~/.keras/keras.json ("backend": "plaidml.keras.backend")'''
+
 from keras.preprocessing.image import load_img, save_img, img_to_array
 import numpy as np
 import scipy
@@ -89,7 +96,8 @@ for layer_name in settings['features']:
     coeff = settings['features'][layer_name]
     x = layer_dict[layer_name].output
     # We avoid border artifacts by only involving non-border pixels in the loss.
-    scaling = K.prod(K.cast(K.shape(x), 'float32'))
+    #scaling = K.prod(K.cast(K.shape(x), 'float32'))
+    scaling = K.cast(K.shape(x), 'float32')
     if K.image_data_format() == 'channels_first':
         loss = loss + coeff * K.sum(K.square(x[:, :, 2: -2, 2: -2])) / scaling
     else:
@@ -130,7 +138,8 @@ def resize_img(img, size):
 def gradient_ascent(x, iterations, step, max_loss=None):
     for i in range(iterations):
         loss_value, grad_values = eval_loss_and_grads(x)
-        if max_loss is not None and loss_value > max_loss:
+        
+        if max_loss is not None and loss_value.any() > max_loss:
             break
         print('..Loss value at', i, ':', loss_value)
         x += step * grad_values
